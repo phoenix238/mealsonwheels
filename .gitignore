@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Environment (contains API keys — never commit)
+.env
+.env.local
+.env.*.local
+
+# Database (user data)
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Debug screenshots
+debug-tesco-*.png
+debug-tesco*.png
+
+# Build output
+client/dist/
+dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Claude Code local settings
+.claude/

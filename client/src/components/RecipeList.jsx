@@ -5,13 +5,14 @@ import { useIsMobile } from '../hooks/useIsMobile.js';
 
 const SIDEBAR_WIDTH = 268;
 
-export default function RecipeList({ recipes }) {
+export default function RecipeList({ recipes, store }) {
   const [selected, setSelected] = useState(new Set());
   const [cartState, setCartState] = useState('idle');
   const [saveState, setSaveState] = useState('idle');
   const cartTimerRef = useRef(null);
   const saveTimerRef = useRef(null);
   const isMobile = useIsMobile();
+  const isInStore = store !== 'tesco';
 
   useEffect(() => () => {
     if (cartTimerRef.current) clearTimeout(cartTimerRef.current);
@@ -105,9 +106,9 @@ export default function RecipeList({ recipes }) {
         ))}
       </div>
 
-      {/* Sticky add bar */}
-      {selected.size > 0 && (
-        <div style={{ position: 'fixed', bottom: 0, left: isMobile ? 0 : SIDEBAR_WIDTH, right: 0, background: '#1f7a3d', padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 100, boxShadow: '0 -4px 20px rgba(31,122,61,.3)' }}>
+      {/* Sticky add-to-Tesco bar — not shown for Lidl/Morrisons */}
+      {selected.size > 0 && !isInStore && (
+        <div style={{ position: 'fixed', bottom: 0, left: isMobile ? 0 : SIDEBAR_WIDTH, right: 0, background: '#1f7a3d', padding: isMobile ? '12px 16px' : '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 100, boxShadow: '0 -4px 20px rgba(31,122,61,.3)' }}>
           <span style={{ color: '#fff', fontSize: 14, fontWeight: 500, fontFamily: "'DM Sans', sans-serif" }}>
             {selected.size} recipe{selected.size > 1 ? 's' : ''} selected
           </span>

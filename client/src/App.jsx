@@ -111,8 +111,8 @@ export default function App() {
         </div>
 
         {/* Controls row */}
-        <div style={{ display: 'flex', gap: isMobile ? 8 : 10, alignItems: 'center', justifyContent: isMobile ? 'space-between' : 'flex-end', flexWrap: 'wrap' }}>
-          <StoreSelector store={store} setStore={handleStoreChange} />
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 8 : 10, alignItems: isMobile ? 'flex-start' : 'center', justifyContent: isMobile ? 'flex-start' : 'flex-end' }}>
+          <StoreSelector store={store} setStore={handleStoreChange} isMobile={isMobile} />
           {!isMobile && store === 'tesco' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div
@@ -249,7 +249,7 @@ export default function App() {
                 </div>
               )}
 
-              {!loading && <RecipeList recipes={recipes} />}
+              {!loading && <RecipeList recipes={recipes} store={store} />}
             </div>
           )}
 

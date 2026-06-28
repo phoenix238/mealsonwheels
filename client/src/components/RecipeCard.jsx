@@ -1,14 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { addToCart } from '../api.js';
+import { useIsMobile } from '../hooks/useIsMobile.js';
 
 const costColor = (cost) => cost < 3 ? '#1f7a3d' : cost < 5 ? '#d4892a' : '#c05a2a';
 
 export default function RecipeCard({ recipe, rank, isBestValue, selected, onToggle }) {
   const [expanded, setExpanded] = useState(false);
   const [cartState, setCartState] = useState('idle');
-  const [pantryOverrides, setPantryOverrides] = useState(new Set()); // pantry items to include
-  const [cartRemovals, setCartRemovals] = useState(new Set());       // non-pantry items to skip
+  const [pantryOverrides, setPantryOverrides] = useState(new Set());
+  const [cartRemovals, setCartRemovals] = useState(new Set());
   const timerRef = useRef(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
@@ -97,7 +99,7 @@ export default function RecipeCard({ recipe, rank, isBestValue, selected, onTogg
       </div>
 
       {expanded && (
-        <div style={{ borderTop: '1px solid #f0ebe3', background: '#faf7f2', padding: '14px 16px 14px 21px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+        <div style={{ borderTop: '1px solid #f0ebe3', background: '#faf7f2', padding: '14px 16px 14px 21px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 18 }}>
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.6px', color: '#9c8c7c', marginBottom: 8 }}>Ingredients</div>
             {recipe.ingredients?.map((ing, i) => {
@@ -138,7 +140,7 @@ export default function RecipeCard({ recipe, rank, isBestValue, selected, onTogg
                   {(ing.in_pantry && !overridden) || cartRemovals.has(ing.name) ? '—' : `£${(ing.price ?? 0).toFixed(2)}`}
                 </span>
               </div>
-            );})}
+            );})}  
           </div>
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.6px', color: '#9c8c7c', marginBottom: 8 }}>Method</div>

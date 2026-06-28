@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import RecipeCard from './RecipeCard.jsx';
 import { addToCart } from '../api.js';
+import { useIsMobile } from '../hooks/useIsMobile.js';
 
 const SIDEBAR_WIDTH = 268;
 
@@ -10,6 +11,7 @@ export default function RecipeList({ recipes }) {
   const [saveState, setSaveState] = useState('idle');
   const cartTimerRef = useRef(null);
   const saveTimerRef = useRef(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => () => {
     if (cartTimerRef.current) clearTimeout(cartTimerRef.current);
@@ -30,7 +32,6 @@ export default function RecipeList({ recipes }) {
 
   const handleAddSelected = async () => {
     const selectedRecipes = recipes.filter((_, i) => selected.has(i));
-    // Deduplicate by name, taking max quantity across recipes
     const quantityMap = new Map();
     selectedRecipes
       .flatMap(r => r.ingredients.filter(i => !i.in_pantry).map(i => ({ name: i.name, qty: 1 })))
@@ -91,7 +92,7 @@ export default function RecipeList({ recipes }) {
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))', gap: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(420px, 1fr))', gap: 14 }}>
         {recipes.map((r, i) => (
           <RecipeCard
             key={i}
@@ -106,7 +107,7 @@ export default function RecipeList({ recipes }) {
 
       {/* Sticky add bar */}
       {selected.size > 0 && (
-        <div style={{ position: 'fixed', bottom: 0, left: SIDEBAR_WIDTH, right: 0, background: '#1f7a3d', padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 100, boxShadow: '0 -4px 20px rgba(31,122,61,.3)' }}>
+        <div style={{ position: 'fixed', bottom: 0, left: isMobile ? 0 : SIDEBAR_WIDTH, right: 0, background: '#1f7a3d', padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 100, boxShadow: '0 -4px 20px rgba(31,122,61,.3)' }}>
           <span style={{ color: '#fff', fontSize: 14, fontWeight: 500, fontFamily: "'DM Sans', sans-serif" }}>
             {selected.size} recipe{selected.size > 1 ? 's' : ''} selected
           </span>

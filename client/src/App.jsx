@@ -9,6 +9,7 @@ import InStoreList from './components/InStoreList.jsx';
 import StoreSelector from './components/StoreSelector.jsx';
 import { generateRecipes, fetchPantry, checkTescoStatus, openTescoLogin } from './api.js';
 import { SIDEBAR_WIDTH } from './constants.js';
+import { useIsMobile } from './hooks/useIsMobile.js';
 
 const TABS = ['Recipes', 'Shopping List', 'Pantry', 'Saved'];
 
@@ -22,6 +23,7 @@ export default function App() {
   const [tescoStatus, setTescoStatus] = useState('unknown');
   const [store, setStore] = useState('tesco');
   const errorTimerRef = useRef(null);
+  const isMobile = useIsMobile();
 
   const handleStoreChange = (s) => {
     setStore(s);
@@ -86,7 +88,20 @@ export default function App() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: '#faf7f2' }}>
 
       {/* Header */}
-      <header style={{ background: '#fff', borderBottom: '1px solid #ede8e0', padding: '0 24px', height: 68, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, boxShadow: '0 1px 0 #ede8e0, 0 4px 16px rgba(42,31,14,.07)' }}>
+      <header style={{
+        background: '#fff',
+        borderBottom: '1px solid #ede8e0',
+        padding: isMobile ? '10px 16px' : '0 24px',
+        height: isMobile ? 'auto' : 68,
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        alignItems: isMobile ? 'stretch' : 'center',
+        justifyContent: 'space-between',
+        gap: isMobile ? 8 : 0,
+        flexShrink: 0,
+        boxShadow: '0 1px 0 #ede8e0, 0 4px 16px rgba(42,31,14,.07)',
+      }}>
+        {/* Logo + title */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
           <div style={{ width: 42, height: 42, background: 'linear-gradient(145deg,#1a6e35,#2db356)', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0, boxShadow: '0 3px 10px rgba(31,122,61,.28)' }}>🍃</div>
           <div>
@@ -94,9 +109,11 @@ export default function App() {
             <div style={{ fontSize: 11, color: '#a89880', letterSpacing: '.2px' }}>{subtitle}</div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+
+        {/* Controls row */}
+        <div style={{ display: 'flex', gap: isMobile ? 8 : 10, alignItems: 'center', justifyContent: isMobile ? 'space-between' : 'flex-end', flexWrap: 'wrap' }}>
           <StoreSelector store={store} setStore={handleStoreChange} />
-          {store === 'tesco' && (
+          {!isMobile && store === 'tesco' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div
                 title={dotTitle}
@@ -135,12 +152,12 @@ export default function App() {
       )}
 
       {/* Tabs */}
-      <nav style={{ background: '#fff', borderBottom: '1px solid #ede8e0', padding: '0 20px', flexShrink: 0, display: 'flex' }}>
+      <nav style={{ background: '#fff', borderBottom: '1px solid #ede8e0', padding: '0 20px', flexShrink: 0, display: 'flex', overflowX: 'auto' }}>
         {TABS.map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            style={{ padding: '14px 18px', border: 'none', background: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: tab === t ? 600 : 400, color: tab === t ? '#1f7a3d' : '#6b5d4f', borderBottom: tab === t ? '3px solid #1f7a3d' : '3px solid transparent', marginBottom: -1, display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}
+            style={{ padding: isMobile ? '12px 14px' : '14px 18px', border: 'none', background: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", fontSize: isMobile ? 13 : 14, fontWeight: tab === t ? 600 : 400, color: tab === t ? '#1f7a3d' : '#6b5d4f', borderBottom: tab === t ? '3px solid #1f7a3d' : '3px solid transparent', marginBottom: -1, display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}
           >
             {t}
           </button>
@@ -150,47 +167,49 @@ export default function App() {
       {/* Body */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
-        {/* Deals sidebar */}
-        <aside style={{ display: 'flex', flexDirection: 'column', width: SIDEBAR_WIDTH, background: '#fff', borderRight: '1px solid #ede8e0', flexShrink: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '13px 16px 11px', borderBottom: '1px solid #ede8e0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.6px', color: '#8c7b65' }}>Active Deals</span>
-            <span style={{ background: '#e8f3ed', color: '#1f7a3d', fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 10 }}>{deals.length}</span>
-          </div>
-          <div style={{ overflowY: 'auto', padding: '10px 12px', flex: 1 }}>
-            {deals.length === 0 ? (
-              <p style={{ fontSize: 12, color: '#b0a090', textAlign: 'center', marginTop: 24, lineHeight: 1.6 }}>Fetch deals to see<br />what's on offer</p>
-            ) : deals.map((d, i) => {
-              const extractPrice = (raw) => raw ? (String(raw).match(/£[\d.]+/)?.[0] ?? null) : null;
-              const ccPrice = extractPrice(d.clubcard_price);
-              const dealPrice = extractPrice(d.deal_price);
-              const origPrice = extractPrice(d.original_price);
-              const dtPrice = extractPrice(d.deal_type);
-              const displayPrice = ccPrice ?? dealPrice ?? dtPrice;
-              const rawDt = d.deal_type;
-              const cleanLabel = rawDt
-                ? rawDt.toUpperCase().includes('CLUBCARD') ? 'Clubcard Price'
-                  : rawDt.length > 28 ? rawDt.slice(0, 25) + '…'
-                  : rawDt
-                : null;
-              return (
-              <div key={i} style={{ padding: '10px 12px', background: '#faf7f2', borderRadius: 6, marginBottom: 8, borderLeft: '3px solid #1f7a3d' }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#2a1f0e', marginBottom: 1, lineHeight: 1.3 }}>{d.name}</div>
-                {displayPrice && (
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 7, marginBottom: 4 }}>
-                    <span style={{ fontSize: 17, fontWeight: 700, color: '#1f7a3d' }}>{displayPrice}</span>
-                    {origPrice && displayPrice !== origPrice && <span style={{ fontSize: 11, color: '#b09070', textDecoration: 'line-through' }}>{origPrice}</span>}
-                  </div>
-                )}
-                {cleanLabel && <span style={{ display: 'inline-block', background: 'rgba(31,122,61,.1)', color: '#1f7a3d', fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 3, textTransform: 'uppercase', letterSpacing: '.3px' }}>{cleanLabel}</span>}
-              </div>
-            );})}
-          </div>
-        </aside>
+        {/* Deals sidebar — desktop only */}
+        {!isMobile && (
+          <aside style={{ display: 'flex', flexDirection: 'column', width: SIDEBAR_WIDTH, background: '#fff', borderRight: '1px solid #ede8e0', flexShrink: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '13px 16px 11px', borderBottom: '1px solid #ede8e0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.6px', color: '#8c7b65' }}>Active Deals</span>
+              <span style={{ background: '#e8f3ed', color: '#1f7a3d', fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 10 }}>{deals.length}</span>
+            </div>
+            <div style={{ overflowY: 'auto', padding: '10px 12px', flex: 1 }}>
+              {deals.length === 0 ? (
+                <p style={{ fontSize: 12, color: '#b0a090', textAlign: 'center', marginTop: 24, lineHeight: 1.6 }}>Fetch deals to see<br />what's on offer</p>
+              ) : deals.map((d, i) => {
+                const extractPrice = (raw) => raw ? (String(raw).match(/£[\d.]+/)?.[0] ?? null) : null;
+                const ccPrice = extractPrice(d.clubcard_price);
+                const dealPrice = extractPrice(d.deal_price);
+                const origPrice = extractPrice(d.original_price);
+                const dtPrice = extractPrice(d.deal_type);
+                const displayPrice = ccPrice ?? dealPrice ?? dtPrice;
+                const rawDt = d.deal_type;
+                const cleanLabel = rawDt
+                  ? rawDt.toUpperCase().includes('CLUBCARD') ? 'Clubcard Price'
+                    : rawDt.length > 28 ? rawDt.slice(0, 25) + '…'
+                    : rawDt
+                  : null;
+                return (
+                <div key={i} style={{ padding: '10px 12px', background: '#faf7f2', borderRadius: 6, marginBottom: 8, borderLeft: '3px solid #1f7a3d' }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#2a1f0e', marginBottom: 1, lineHeight: 1.3 }}>{d.name}</div>
+                  {displayPrice && (
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 7, marginBottom: 4 }}>
+                      <span style={{ fontSize: 17, fontWeight: 700, color: '#1f7a3d' }}>{displayPrice}</span>
+                      {origPrice && displayPrice !== origPrice && <span style={{ fontSize: 11, color: '#b09070', textDecoration: 'line-through' }}>{origPrice}</span>}
+                    </div>
+                  )}
+                  {cleanLabel && <span style={{ display: 'inline-block', background: 'rgba(31,122,61,.1)', color: '#1f7a3d', fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 3, textTransform: 'uppercase', letterSpacing: '.3px' }}>{cleanLabel}</span>}
+                </div>
+              );})}
+            </div>
+          </aside>
+        )}
 
         {/* Main scroll area */}
         <main style={{ flex: 1, overflowY: 'auto' }}>
           {tab === 'Recipes' && (
-            <div style={{ padding: '18px 20px 32px' }}>
+            <div style={{ padding: isMobile ? '12px 12px 32px' : '18px 20px 32px' }}>
               <ChatInput onGenerate={handleGenerate} loading={loading} />
 
               {error && (

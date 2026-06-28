@@ -2,6 +2,8 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { getDeals, getClubcardDeals, searchIngredient, addToCart, closeBrowser, openLoginPage, checkSessionAlive } from './tesco.js';
+import { getLidlDeals } from './lidl.js';
+import { getMorrisonsDeals } from './morrisons.js';
 import { generateRecipes } from './claude.js';
 import { saveRecipe, getSavedRecipes, getPantry, addPantryItem, removePantryItem, deleteRecipe } from './db.js';
 
@@ -76,15 +78,37 @@ app.post('/api/tesco/cart', async (req, res) => {
   }
 });
 
+// ── Lidl routes ───────────────────────────────────────────────────────────────
+
+app.get('/api/lidl/deals', async (req, res) => {
+  try {
+    const deals = await getLidlDeals();
+    res.json(deals);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Morrisons routes ──────────────────────────────────────────────────────────
+
+app.get('/api/morrisons/deals', async (req, res) => {
+  try {
+    const deals = await getMorrisonsDeals();
+    res.json(deals);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Recipe routes ─────────────────────────────────────────────────────────────
 
 app.post('/api/recipes', async (req, res) => {
-  const { deals = [], dietary, cuisine, count = 5, userPrompt } = req.body;
+  const { deals = [], dietary, cuisine, count = 5, userPrompt, store = 'tesco' } = req.body;
   if (!userPrompt && !cuisine) return res.status(400).json({ error: 'cuisine or userPrompt is required' });
 
   try {
     const pantry = getPantry();
-    const recipes = await generateRecipes({ deals, pantry, dietary, cuisine, count, userPrompt });
+    const recipes = await generateRecipes({ deals, pantry, dietary, cuisine, count, userPrompt, store });
     res.json(recipes);
   } catch (err) {
     console.error('Recipe generation error:', err);

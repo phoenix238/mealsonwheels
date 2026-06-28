@@ -12,6 +12,8 @@ async function apiFetch(url, options = {}) {
 
 export const fetchDeals = () => apiFetch(`${BASE}/tesco/deals`);
 export const fetchClubcardDeals = () => apiFetch(`${BASE}/tesco/clubcard-deals`);
+export const fetchLidlDeals = () => apiFetch(`${BASE}/lidl/deals`);
+export const fetchMorrisonsDeals = () => apiFetch(`${BASE}/morrisons/deals`);
 
 export const generateRecipes = (payload) =>
   apiFetch(`${BASE}/recipes`, {

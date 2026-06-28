@@ -1,7 +1,15 @@
 import React, { useState } from 'react';
-import { fetchDeals } from '../api.js';
+import { fetchDeals, fetchLidlDeals, fetchMorrisonsDeals } from '../api.js';
 
-export default function DealsPanel({ deals, setDeals, compact }) {
+const STORE_FETCH = {
+  tesco: fetchDeals,
+  lidl: fetchLidlDeals,
+  morrisons: fetchMorrisonsDeals,
+};
+
+const STORE_LABEL = { tesco: 'Tesco', lidl: 'Lidl', morrisons: 'Morrisons' };
+
+export default function DealsPanel({ deals, setDeals, store = 'tesco' }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -9,7 +17,8 @@ export default function DealsPanel({ deals, setDeals, compact }) {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchDeals();
+      const fn = STORE_FETCH[store] ?? fetchDeals;
+      const data = await fn();
       if (data.error) throw new Error(data.error);
       setDeals(data);
     } catch (e) {
@@ -20,6 +29,7 @@ export default function DealsPanel({ deals, setDeals, compact }) {
   };
 
   const fetched = deals.length > 0;
+  const name = STORE_LABEL[store] ?? 'Deals';
 
   return (
     <>
@@ -32,12 +42,12 @@ export default function DealsPanel({ deals, setDeals, compact }) {
           background: fetched ? '#e8f3ed' : '#fff',
           color: fetched ? '#1f7a3d' : '#2a1f0e',
           border: fetched ? '1px solid #1f7a3d' : '1px solid #d4ccc2',
-          letterSpacing: '.1px', opacity: loading ? 0.6 : 1,
+          letterSpacing: '.1px', opacity: loading ? 0.6 : 1, whiteSpace: 'nowrap',
         }}
       >
-        {loading ? '↻ Fetching…' : fetched ? `✓ ${deals.length} Deals` : 'Fetch Deals'}
+        {loading ? `↻ Fetching ${name}…` : fetched ? `✓ ${deals.length} Deals` : `Fetch ${name} Deals`}
       </button>
-      {error && <span style={{ fontSize: 11, color: '#b91c1c' }}>{error}</span>}
+      {error && <span style={{ fontSize: 11, color: '#b91c1c', maxWidth: 180 }}>{error}</span>}
     </>
   );
 }

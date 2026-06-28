@@ -5,9 +5,9 @@ import RecipeList from './components/RecipeList.jsx';
 import Pantry from './components/Pantry.jsx';
 import SavedRecipes from './components/SavedRecipes.jsx';
 import ShoppingList from './components/ShoppingList.jsx';
+import InStoreList from './components/InStoreList.jsx';
+import StoreSelector from './components/StoreSelector.jsx';
 import { generateRecipes, fetchPantry, checkTescoStatus, openTescoLogin } from './api.js';
-
-const refreshPantry = (setPantry) => fetchPantry().then(setPantry).catch(() => {});
 import { SIDEBAR_WIDTH } from './constants.js';
 
 const TABS = ['Recipes', 'Shopping List', 'Pantry', 'Saved'];
@@ -20,7 +20,13 @@ export default function App() {
   const [error, setError] = useState(null);
   const [pantry, setPantry] = useState([]);
   const [tescoStatus, setTescoStatus] = useState('unknown');
+  const [store, setStore] = useState('tesco');
   const errorTimerRef = useRef(null);
+
+  const handleStoreChange = (s) => {
+    setStore(s);
+    setDeals([]);
+  };
 
   useEffect(() => {
     fetchPantry().then(setPantry).catch(() => {});
@@ -30,7 +36,6 @@ export default function App() {
     const check = async () => {
       try {
         const { authenticated } = await checkTescoStatus();
-        // null = browser not yet launched (not the same as signed out)
         setTescoStatus(authenticated === null ? 'unknown' : authenticated ? 'ok' : 'expired');
       } catch {
         setTescoStatus('unknown');
@@ -60,7 +65,7 @@ export default function App() {
     setError(null);
     setRecipes([]);
     try {
-      const data = await generateRecipes({ deals, userPrompt });
+      const data = await generateRecipes({ deals, userPrompt, store });
       setRecipes(data);
       setTab('Recipes');
     } catch (e) {
@@ -71,6 +76,8 @@ export default function App() {
   };
 
   const totalCost = recipes.reduce((s, r) => s + (r.estimated_cost ?? 0), 0);
+  const isInStore = store !== 'tesco';
+  const subtitle = isInStore ? 'Smart deals · AI recipes · In-store list' : 'Smart deals · AI recipes · One-click cart';
 
   const dotColor = tescoStatus === 'ok' ? '#1f7a3d' : tescoStatus === 'expired' ? '#f59e0b' : '#d4ccc2';
   const dotTitle = tescoStatus === 'ok' ? 'Tesco: logged in' : tescoStatus === 'expired' ? 'Tesco: session expired' : 'Tesco: checking…';
@@ -83,39 +90,42 @@ export default function App() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
           <div style={{ width: 42, height: 42, background: 'linear-gradient(145deg,#1a6e35,#2db356)', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0, boxShadow: '0 3px 10px rgba(31,122,61,.28)' }}>🍃</div>
           <div>
-            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 19, fontWeight: 700, color: '#1a1208', letterSpacing: '-.3px', lineHeight: 1.2 }}>Tesco Recipe Planner</div>
-            <div style={{ fontSize: 11, color: '#a89880', letterSpacing: '.2px' }}>Smart deals · AI recipes · One-click cart</div>
+            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 19, fontWeight: 700, color: '#1a1208', letterSpacing: '-.3px', lineHeight: 1.2 }}>Meals on Wheels</div>
+            <div style={{ fontSize: 11, color: '#a89880', letterSpacing: '.2px' }}>{subtitle}</div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div
-              title={dotTitle}
-              style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: dotColor, transition: 'background .3s' }}
-            />
-            <button
-              onClick={async () => {
-                try { await openTescoLogin(); } catch {}
-                setTescoStatus('unknown');
-                setTimeout(async () => {
-                  try {
-                    const { authenticated } = await checkTescoStatus();
-                    setTescoStatus(authenticated === null ? 'unknown' : authenticated ? 'ok' : 'expired');
-                  } catch {}
-                }, 5000);
-              }}
-              title="Open Tesco login in Chrome"
-              style={{ fontSize: 12, fontWeight: 600, color: '#1f7a3d', background: '#e8f3ed', border: '1px solid #b6dfc5', borderRadius: 7, padding: '6px 13px', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' }}
-            >
-              🔑 Tesco Login
-            </button>
-          </div>
-          <DealsPanel deals={deals} setDeals={setDeals} compact />
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <StoreSelector store={store} setStore={handleStoreChange} />
+          {store === 'tesco' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div
+                title={dotTitle}
+                style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: dotColor, transition: 'background .3s' }}
+              />
+              <button
+                onClick={async () => {
+                  try { await openTescoLogin(); } catch {}
+                  setTescoStatus('unknown');
+                  setTimeout(async () => {
+                    try {
+                      const { authenticated } = await checkTescoStatus();
+                      setTescoStatus(authenticated === null ? 'unknown' : authenticated ? 'ok' : 'expired');
+                    } catch {}
+                  }, 5000);
+                }}
+                title="Open Tesco login in Chrome"
+                style={{ fontSize: 12, fontWeight: 600, color: '#1f7a3d', background: '#e8f3ed', border: '1px solid #b6dfc5', borderRadius: 7, padding: '6px 13px', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' }}
+              >
+                🔑 Tesco Login
+              </button>
+            </div>
+          )}
+          <DealsPanel deals={deals} setDeals={setDeals} store={store} />
         </div>
       </header>
 
-      {/* Session expired banner */}
-      {tescoStatus === 'expired' && (
+      {/* Session expired banner — Tesco only */}
+      {store === 'tesco' && tescoStatus === 'expired' && (
         <div style={{ background: '#fef3c7', borderBottom: '1px solid #f59e0b', padding: '10px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, gap: 12 }}>
           <span style={{ fontSize: 13, color: '#92400e', fontWeight: 500 }}>
             ⚠️ Tesco signed you out — click "Tesco Login" to log back in.
@@ -195,6 +205,14 @@ export default function App() {
                   <div style={{ fontSize: 13, color: '#9c8c7c' }}>
                     <strong style={{ color: '#2a1f0e' }}>{recipes.length} recipes</strong> · Est. total <strong style={{ color: '#1f7a3d' }}>£{totalCost.toFixed(2)}</strong> / week
                   </div>
+                  {isInStore && (
+                    <button
+                      onClick={() => setTab('Shopping List')}
+                      style={{ fontSize: 12, fontWeight: 600, color: '#1f7a3d', background: '#e8f3ed', border: '1px solid #b6dfc5', borderRadius: 7, padding: '6px 13px', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+                    >
+                      📋 View Shopping List
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -216,7 +234,11 @@ export default function App() {
             </div>
           )}
 
-          {tab === 'Shopping List' && <ShoppingList />}
+          {tab === 'Shopping List' && (
+            isInStore
+              ? <InStoreList recipes={recipes} store={store} />
+              : <ShoppingList />
+          )}
           {tab === 'Saved' && <SavedRecipes />}
           {tab === 'Pantry' && <Pantry pantry={pantry} setPantry={setPantry} />}
         </main>
